@@ -82,7 +82,38 @@ module.exports = {
         log('creating SSL certivicate for:', colors.bold(item))
         looper(i+1)
       } else {
+        module.exports.multicommand('ls -a && cat check && cat .gitignore') // just some command for testing
         callback('dune')
+      }
+    }
+    looper(0)
+
+  },
+  multicommand(command, cb) {
+    // run a long command with "&&"
+    let callback = (...items) => 
+    (typeof cb == 'function') 
+      ? cb(...items) 
+      : false
+    let CMDs = command.split('&&') // split all the commands into parts
+    CMDs = CMDs
+      .map(el => el.replace(/\r?\n|\r/g, '').split(' ')) // replace all line breaks
+      .map(el => el.filter(el => el)) // remove all strings without content
+    let looper = i => {
+      let cmd = CMDs[i]
+      if (cmd) {
+        const cmdSpawn = spawn(cmd[0], cmd.slice(1, cmd.length))
+        cmdSpawn.stdout.on('data', data => {
+          console.log(colors.green.bold(`output ( ${cmd.join(' ')} ):\n`), data.toString())
+        })
+        cmdSpawn.stderr.on('data', data => {
+          console.log(colors.red.bold('err:\n', data.toString()))
+        })
+        cmdSpawn.on('close', code => {
+          looper(i+1)
+        })
+      } else {
+        callback()
       }
     }
     looper(0)
