@@ -1,0 +1,17 @@
+{
+  "name": "checkssl",
+  "version": "1.0.0",
+  "description": "Check the ssl certivicates of youre websites and fix them if needed",
+  "main": "check.js",
+  "scripts": {
+    "start": "node check.js",
+    "watch": "node check.js --watch"
+  },
+  "author": "mjarkk",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "colors": "^1.3.0",
+    "node-fetch": "^2.1.2"
+  }
+}
