@@ -92,9 +92,15 @@ module.exports = {
         looper(i+1)
       } else {
         command.push(`systemctl start ${webServerCTL}`)
-        module.exports.multicommand(command.join(' && '), () => {
+        if (command.length == 0 || command.length == 2) {
           log(colors.green.bold('dune'))
-        })
+          callback()
+        } else {
+          module.exports.multicommand(command.join(' && '), () => {
+            log(colors.green.bold('dune'))
+            callback()
+          })
+        }
       }
     }
     looper(0)
@@ -118,12 +124,8 @@ module.exports = {
         try {
           const cmdSpawn = spawn(cmd[0], cmd.slice(1, cmd.length))
           log(colors.green.bold(`running: ${cmd.join(' ')}`))
-          cmdSpawn.stdout.on('data', data => 
-            log(data.toString())
-          )
-          cmdSpawn.stderr.on('data', data => 
-            log(colors.red.bold('err:\n', data.toString()))
-          )
+          cmdSpawn.stdout.on('data', data => log(data.toString()))
+          cmdSpawn.stderr.on('data', data => log(data.toString()))
           let next = () =>
             currentLoopItem == i
               ? looper(i+1)
