@@ -76,14 +76,25 @@ module.exports = {
       (typeof cb == 'function') 
         ? cb(...items) 
         : log(colors.green.bold(...items))
+    
+        let webServerCTL = 
+      config.webServer == 'nginx'
+        ? 'nginx'
+        : 'httpd'
+    let command = []
+    command.push(`systemctl stop ${webServerCTL}`)
+    
     let looper = i => {
       let item = list[i]
       if (item) {
         log('creating SSL certivicate for:', colors.bold(item))
+        command.push(config.fixCommand.replace(/\%\%domain\%\%/g, item))
         looper(i+1)
       } else {
-        module.exports.multicommand('ls -a && cat check && cat .gitignore') // just some command for testing
-        callback('dune')
+        command.push(`systemctl start ${webServerCTL}`)
+        module.exports.multicommand(command.join(' && '), () => {
+          log(colors.green.bold('dune'))
+        })
       }
     }
     looper(0)
@@ -99,19 +110,32 @@ module.exports = {
     CMDs = CMDs
       .map(el => el.replace(/\r?\n|\r/g, '').split(' ')) // replace all line breaks
       .map(el => el.filter(el => el)) // remove all strings without content
+    let currentLoopItem = 0
     let looper = i => {
+      currentLoopItem = i
       let cmd = CMDs[i]
       if (cmd) {
-        const cmdSpawn = spawn(cmd[0], cmd.slice(1, cmd.length))
-        cmdSpawn.stdout.on('data', data => {
-          console.log(colors.green.bold(`output ( ${cmd.join(' ')} ):\n`), data.toString())
-        })
-        cmdSpawn.stderr.on('data', data => {
-          console.log(colors.red.bold('err:\n', data.toString()))
-        })
-        cmdSpawn.on('close', code => {
-          looper(i+1)
-        })
+        try {
+          const cmdSpawn = spawn(cmd[0], cmd.slice(1, cmd.length))
+          log(colors.green.bold(`running: ${cmd.join(' ')}`))
+          cmdSpawn.stdout.on('data', data => 
+            log(data.toString())
+          )
+          cmdSpawn.stderr.on('data', data => 
+            log(colors.red.bold('err:\n', data.toString()))
+          )
+          let next = () =>
+            currentLoopItem == i
+              ? looper(i+1)
+              : false
+          cmdSpawn.on('close', next)
+          cmdSpawn.on('error', next)
+          cmdSpawn.on('exit', next)
+        } catch (err) {
+          if (currentLoopItem == i) {
+            looper(i+1)
+          }
+        }
       } else {
         callback()
       }

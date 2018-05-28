@@ -12,8 +12,6 @@ module.exports = {
   // checkDomains:
   // only the domain name NOT the "/" and "https"
   checkDomains: [
-    'vishandel.pro',
-    'www.vishandel.pro',
     'example.com',
     'www.example.com'
   ],
