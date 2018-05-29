@@ -1,8 +1,13 @@
 const fetch = require('node-fetch')
 const colors = require('colors')
+const isRoot = require('is-root')()
 const { spawn } = require('child_process')
 const config = require('./config.js')
 const log = console.log
+
+if (!isRoot) {
+  log(colors.yellow.bold('Script not running with root access!!'), colors.yellow('\nThis might couse issues with stopping/starting the webserver'))
+}
 
 module.exports = {
   checkConfig() {
@@ -24,7 +29,7 @@ module.exports = {
       }
     ]
     let quite = err => {
-      console.log(colors.red.bold(err))
+      log(colors.red.bold(err))
       process.exit()
     }
     checks.map(el => el.check ? true : quite(el.err))
@@ -65,7 +70,11 @@ module.exports = {
         })
       } else {
         log(colors.green.bold('dune checking domains'))
-        log('Wrong domains found:', colors.red(...wrongDomains))
+        if (wrongDomains.length) {
+          log('Wrong domains found:', colors.red(...wrongDomains))
+        } else {
+          log(colors.green.bold('No domains found with SSL issues'))
+        }
         callback(wrongDomains)
       }
     }
