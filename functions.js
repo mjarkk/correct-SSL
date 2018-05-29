@@ -6,10 +6,6 @@ const config = require('./config.js')
 const overwirdes = require('./arguments.js')
 const log = console.log
 
-if (!isRoot) {
-  log(colors.yellow.bold('Script not running with root access!!'), colors.yellow('\nThis might couse issues with stopping/starting the webserver'))
-}
-
 module.exports = {
   checkConfig() {
     if (!overwirdes.noConfigCheck) {
@@ -28,10 +24,14 @@ module.exports = {
           check: c.checkDomains.reduce((acc, el) => 
             (el.indexOf('/') === -1 && el.indexOf(' ') === -1 && el !== '') ? acc : false, true),
           err: '"checkDomains" contains one or more domain(s) that aren\'t falid, the domains can\'t contain a "/", " " or be empty'
+        },{
+          check: isRoot,
+          err: 'Script not running with root access'
         }
       ]
       let quite = err => {
         log(colors.red.bold(err))
+        log(colors.red('use -c to ignore'))
         process.exit()
       }
       checks.map(el => el.check ? true : quite(el.err))
