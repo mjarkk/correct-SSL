@@ -9,6 +9,10 @@ module.exports = {
   
   // Do not fix the SSL certivicate only check
   // --noFix , -f
-  noFix: !!argv.noFix || !!argv.f
+  noFix: !!argv.noFix || !!argv.f,
+
+  // Only fix the first SSL certivicate
+  // --onlyFirst , -o
+  onlyFirst: !!argv.onlyFirst || !!argv.o
 
 }

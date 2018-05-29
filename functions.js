@@ -100,7 +100,7 @@ module.exports = {
       
       let looper = i => {
         let item = list[i]
-        if (item) {
+        if (item && ((overwirdes.onlyFirst && i == 0) || !overwirdes.onlyFirst)) {
           log('creating SSL certivicate for:', colors.bold(item))
           command.push(config.fixCommand.replace(/\%\%domain\%\%/g, item))
           looper(i+1)
@@ -110,7 +110,8 @@ module.exports = {
             log(colors.green.bold('dune'))
             callback()
           } else {
-            module.exports.multicommand(command.join(' && '), () => {
+            let toEx = command.join(' && ')
+            module.exports.multicommand(toEx,() => {
               log(colors.green.bold('dune'))
               callback()
             })
