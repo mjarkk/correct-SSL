@@ -3,6 +3,7 @@ const colors = require('colors')
 const isRoot = require('is-root')()
 const { spawn } = require('child_process')
 const config = require('./config.js')
+const overwirdes = require('./arguments.js')
 const log = console.log
 
 if (!isRoot) {
@@ -11,28 +12,32 @@ if (!isRoot) {
 
 module.exports = {
   checkConfig() {
-    let c = config
-    let checks = [
-      {
-        check: 
-          c.webServer == 'autocheck'
-          || c.webServer == 'apache'
-          || c.webServer == 'nginx',
-        err: 'The "webServer" option has a wrong input, must be: autocheck, apache or nginx'
-      },{
-        check: c.checkDelay <= 25 && typeof c.checkDelay == 'number',
-        err: '"checkDelay" can\'t than 24 Hours and must be a number'
-      },{
-        check: c.checkDomains.reduce((acc, el) => 
-          (el.indexOf('/') === -1 && el.indexOf(' ') === -1 && el !== '') ? acc : false, true),
-        err: '"checkDomains" contains one or more domain(s) that aren\'t falid, the domains can\'t contain a "/", " " or be empty'
+    if (!overwirdes.noConfigCheck) {
+      let c = config
+      let checks = [
+        {
+          check: 
+            c.webServer == 'autocheck'
+            || c.webServer == 'apache'
+            || c.webServer == 'nginx',
+          err: 'The "webServer" option has a wrong input, must be: autocheck, apache or nginx'
+        },{
+          check: c.checkDelay <= 25 && typeof c.checkDelay == 'number',
+          err: '"checkDelay" can\'t than 24 Hours and must be a number'
+        },{
+          check: c.checkDomains.reduce((acc, el) => 
+            (el.indexOf('/') === -1 && el.indexOf(' ') === -1 && el !== '') ? acc : false, true),
+          err: '"checkDomains" contains one or more domain(s) that aren\'t falid, the domains can\'t contain a "/", " " or be empty'
+        }
+      ]
+      let quite = err => {
+        log(colors.red.bold(err))
+        process.exit()
       }
-    ]
-    let quite = err => {
-      log(colors.red.bold(err))
-      process.exit()
+      checks.map(el => el.check ? true : quite(el.err))
+    } else {
+      log(colors.yellow.bold('Skipping checking the config.js file'))
     }
-    checks.map(el => el.check ? true : quite(el.err))
   },
   getWebServer(callback) {
     fetch('http://' + config.checkDomains[0], {
@@ -85,35 +90,38 @@ module.exports = {
       (typeof cb == 'function') 
         ? cb(...items) 
         : log(colors.green.bold(...items))
-    
-        let webServerCTL = 
-      config.webServer == 'nginx'
-        ? 'nginx'
-        : 'httpd'
-    let command = []
-    command.push(`systemctl stop ${webServerCTL}`)
-    
-    let looper = i => {
-      let item = list[i]
-      if (item) {
-        log('creating SSL certivicate for:', colors.bold(item))
-        command.push(config.fixCommand.replace(/\%\%domain\%\%/g, item))
-        looper(i+1)
-      } else {
-        command.push(`systemctl start ${webServerCTL}`)
-        if (command.length == 0 || command.length == 2) {
-          log(colors.green.bold('dune'))
-          callback()
+    if (!overwirdes.noFix) {
+      let webServerCTL = 
+        config.webServer == 'nginx'
+          ? 'nginx'
+          : 'httpd'
+      let command = []
+      command.push(`systemctl stop ${webServerCTL}`)
+      
+      let looper = i => {
+        let item = list[i]
+        if (item) {
+          log('creating SSL certivicate for:', colors.bold(item))
+          command.push(config.fixCommand.replace(/\%\%domain\%\%/g, item))
+          looper(i+1)
         } else {
-          module.exports.multicommand(command.join(' && '), () => {
+          command.push(`systemctl start ${webServerCTL}`)
+          if (command.length == 0 || command.length == 2) {
             log(colors.green.bold('dune'))
             callback()
-          })
+          } else {
+            module.exports.multicommand(command.join(' && '), () => {
+              log(colors.green.bold('dune'))
+              callback()
+            })
+          }
         }
       }
+      looper(0)
+    } else {
+      log(colors.yellow.bold('Skipping correcting of the SSL certivicate'))
+      callback()
     }
-    looper(0)
-
   },
   multicommand(command, cb) {
     // run a long command with "&&"

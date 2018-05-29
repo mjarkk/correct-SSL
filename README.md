@@ -11,3 +11,9 @@ This script allows you to faster correct ssl certivactes on linux for a list of 
 
 ## Use
 - `sudo ./check`
+
+## Arguments
+Full | Small | Pretty
+--- | --- | ---
+`--noConfigCheck` | `-c` | Do not check the config file
+`--noFix` | `-f` | Do not fix the SSL certivicate
