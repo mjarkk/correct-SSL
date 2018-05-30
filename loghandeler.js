@@ -4,7 +4,10 @@ const l = console.log
 
 module.exports = {
   log(type, ...argv) {
-    if (argv.length == 0) {
+    if (
+      argv.length == 0 
+      && !['ignore','err','bigErr','success','bigSuccess','info'].includes(type)
+    ) {
       argv.push(type)
       type = 'Null'
     }
