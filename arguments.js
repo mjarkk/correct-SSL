@@ -1,4 +1,15 @@
 const argv = require('minimist')(process.argv)
+const marked = require('marked')
+const TR = require('marked-terminal')
+const fs = require('fs')
+var stripColors = require('strip-color')
+const log = console.log
+
+marked.setOptions({
+  renderer: new TR({
+    tab: 2
+  })
+})
 
 module.exports = {
 
@@ -21,5 +32,13 @@ module.exports = {
   // No colors
   // --noColors , -u
   noColors: !!argv.noColors || !!argv.nocolors || !!argv.u
+}
 
+if (argv.help) {
+  let output = marked(fs.readFileSync('README.md').toString())
+  if (module.exports.noColors) {
+    output = stripColors(output)
+  }
+  log(output)
+  process.exit()
 }
