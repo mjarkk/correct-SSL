@@ -2,8 +2,6 @@ const config = require('./config.js')
 const funs = require('./functions.js')
 const fetch = require('node-fetch')
 
-const log = console.log
-
 // check the config file
 funs.checkConfig()
 

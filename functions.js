@@ -1,10 +1,9 @@
 const fetch = require('node-fetch')
-const colors = require('colors')
 const isRoot = require('is-root')()
 const { spawn } = require('child_process')
 const config = require('./config.js')
 const overwirdes = require('./arguments.js')
-const log = console.log
+const { log } = require('./loghandeler.js')
 
 module.exports = {
   checkConfig() {
@@ -30,13 +29,16 @@ module.exports = {
         }
       ]
       let quite = err => {
-        log(colors.red.bold(err))
-        log(colors.red('use -c to ignore'))
+        log('bigErr', err)
+        log('err', 'use -c to ignore')
         process.exit()
       }
-      checks.map(el => el.check ? true : quite(el.err))
+      checks.map(el => el.check 
+        ? true 
+        : quite(el.err)
+      )
     } else {
-      log(colors.yellow.bold('Skipping checking the config.js file'))
+      log('info', 'Skipping checking the config.js file')
     }
   },
   getWebServer(callback) {
@@ -53,14 +55,17 @@ module.exports = {
         )
       }
     })
-    .catch(err => log(err))
+    .catch(err => {
+      log(err)
+      process.exit()
+    })
   },
   checkSSL(callback) {
     let wrongDomains = []
     let looper = i => {
       let domain = config.checkDomains[i]
       if (typeof domain == 'string') {
-        log('checking domain:', colors.bold(domain))
+        log('info', `checking domain: ${domain}`)
         fetch('https://' + domain, {
           redirect: 'manual'
         })
@@ -74,11 +79,11 @@ module.exports = {
           looper(i+1)
         })
       } else {
-        log(colors.green.bold('dune checking domains'))
+        log('bigSuccess', 'dune checking domains')
         if (wrongDomains.length) {
-          log('Wrong domains found:', colors.red(...wrongDomains))
+          log('info', `Wrong domains found: ${wrongDomains.join(' ')}`)
         } else {
-          log(colors.green.bold('No domains found with SSL issues'))
+          log('bigSuccess', 'No domains found with SSL issues')
         }
         callback(wrongDomains)
       }
@@ -89,7 +94,7 @@ module.exports = {
     let callback = (...items) => 
       (typeof cb == 'function') 
         ? cb(...items) 
-        : log(colors.green.bold(...items))
+        : log('bigSuccess', ...items)
     if (!overwirdes.noFix) {
       let webServerCTL = 
         config.webServer == 'nginx'
@@ -101,18 +106,18 @@ module.exports = {
       let looper = i => {
         let item = list[i]
         if (item && ((overwirdes.onlyFirst && i == 0) || !overwirdes.onlyFirst)) {
-          log('creating SSL certivicate for:', colors.bold(item))
+          log(`creating SSL certivicate for: ${item}`)
           command.push(config.fixCommand.replace(/\%\%domain\%\%/g, item))
           looper(i+1)
         } else {
           command.push(`systemctl start ${webServerCTL}`)
           if (command.length == 0 || command.length == 2) {
-            log(colors.green.bold('dune'))
+            log('bigSuccess', 'dune')
             callback()
           } else {
             let toEx = command.join(' && ')
             module.exports.multicommand(toEx,() => {
-              log(colors.green.bold('dune'))
+              log('bigSuccess', 'dune')
               callback()
             })
           }
@@ -120,7 +125,7 @@ module.exports = {
       }
       looper(0)
     } else {
-      log(colors.yellow.bold('Skipping correcting of the SSL certivicate'))
+      log('info', 'Skipping correcting of the SSL certivicate')
       callback()
     }
   },
@@ -141,9 +146,9 @@ module.exports = {
       if (cmd) {
         try {
           const cmdSpawn = spawn(cmd[0], cmd.slice(1, cmd.length))
-          log(colors.green.bold(`running: ${cmd.join(' ')}`))
-          cmdSpawn.stdout.on('data', data => log(data.toString()))
-          cmdSpawn.stderr.on('data', data => log(data.toString()))
+          log('bigSuccess', `running: ${cmd.join(' ')}`)
+          cmdSpawn.stdout.on('data', data => log('ignore', data.toString()))
+          cmdSpawn.stderr.on('data', data => log('ignore', data.toString()))
           let next = () =>
             currentLoopItem == i
               ? looper(i+1)

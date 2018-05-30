@@ -18,3 +18,5 @@ Full | Small | Pretty
 `--noConfigCheck` | `-c` | Do not check the config file
 `--noFix` | `-f` | Do not fix the SSL certivicate
 `--onlyFirst` | `-o` | Only fix the first SSL certivicate
+`--noLogs` | `-l` | No terminal logs
+`--noColors` | `-u` | No fancy colors
